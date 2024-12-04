@@ -807,9 +807,9 @@ if ($hostname) {
                 Route::put('orders/{id}/deliver', 'RestaurantController@deliverOrder')->name('orders.deliver');
                 
                 // Ruta para la vista de pedidos entregados
-                Route::get('restaurants/orders/delivered', 'RestaurantController@deliveredOrders')->name('orders.delivered');
+                Route::get('orders/delivered', 'RestaurantController@deliveredOrders')->name('orders.delivered');
                 // Ruta para el polling de pedidos entregados
-                Route::get('restaurants/orders/delivered/polling', 'RestaurantController@pollDeliveredOrders')->name('orders.delivered.polling');
+                Route::get('orders/delivered/polling', 'RestaurantController@pollDeliveredOrders')->name('orders.delivered.polling');
 
                 // Polling
                 Route::get('orders/polling', 'RestaurantController@pollOrders')->name('orders.polling'); // Polling para actualizar lista
