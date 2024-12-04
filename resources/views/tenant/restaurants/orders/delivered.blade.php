@@ -53,7 +53,9 @@
                     </ul>
                 </td>
                 <td>
-                    ${{ number_format($order->items->sum(fn($item) => $item->price * $item->quantity), 2) }}
+                    ${{ number_format($order->items->sum(function($item) {
+                        return $item->price * $item->quantity;
+                    }), 2) }}
                 </td>
             </tr>
             @endforeach
