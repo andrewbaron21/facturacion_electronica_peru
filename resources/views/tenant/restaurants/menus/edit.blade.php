@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h1>Editar Platillo</h1>
+    <h1>Editar Plato</h1>
 
     {{-- Mostrar errores --}}
     @if ($errors->any())
@@ -39,14 +39,57 @@
             <textarea name="description" class="form-control" rows="3">{{ $menu->description }}</textarea>
         </div>
         <div class="form-group">
-            <label>Imagen</label>
-            <input type="file" name="image" class="form-control">
-            @if($menu->image)
-                <img src="{{ asset('storage/' . $menu->image) }}" alt="Imagen del menú" class="img-fluid mt-2" style="max-width: 200px;">
-            @endif
+            <label for="customFile">Imagen</label>
+            <div class="custom-file-wrapper">
+                <input type="file" id="customFile" name="image" class="d-none">
+                <button type="button" id="customButton" class="btn btn-secondary">Seleccionar imagen</button>
+                <span id="fileName" class="ml-2">No se ha seleccionado</span>
+            </div>
+            
+            <div class="mt-3">
+                <label>Imagen actual:</label><br>
+                @if($menu->image)
+                    <img src="{{ asset('storage/' . $menu->image) }}" alt="Imagen del menú" class="img-fluid" style="max-width: 200px;">
+                @else
+                    <p>No hay imagen disponible</p>
+                @endif
+            </div>
+            
+            <div class="mt-3" id="newImagePreview" style="display: none;">
+                <label>Imagen nueva:</label><br>
+                <img id="previewImage" src="#" alt="Previsualización de la nueva imagen" class="img-fluid" style="max-width: 200px;">
+            </div>
         </div>
-
         <button type="submit" class="btn btn-primary mt-3">Actualizar</button>
     </form>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const customFileInput = document.getElementById('customFile');
+        const customButton = document.getElementById('customButton');
+        const fileNameDisplay = document.getElementById('fileName');
+        const newImagePreview = document.getElementById('newImagePreview');
+        const previewImage = document.getElementById('previewImage');
+
+        customButton.addEventListener('click', function () {
+            customFileInput.click(); // Abrimos el selector de imagen
+        });
+
+        customFileInput.addEventListener('change', function () {
+            const file = customFileInput.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name; // Actualizamos el nombre del archivo
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    previewImage.src = e.target.result; // Cargamos la previsualización
+                    newImagePreview.style.display = 'block'; // Mostramos el contenedor de la nueva imagen
+                };
+                reader.readAsDataURL(file);
+            } else {
+                fileNameDisplay.textContent = 'No se ha seleccionado ninguna imagen';
+                newImagePreview.style.display = 'none'; // Ocultamos el contenedor si no se selecciona nada
+            }
+        });
+    });
+</script>
 @endsection

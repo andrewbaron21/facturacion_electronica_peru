@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h1>Gestión de Platillos</h1>
+    <h1>Gestión de Platos</h1>
 
     {{-- Mensajes de éxito --}}
     @if(session('success'))
@@ -11,7 +11,7 @@
         </div>
     @endif
 
-    <a href="{{ route('menus.create') }}" class="btn btn-primary mb-3">Agregar Platillo</a>
+    <a href="{{ route('menus.create') }}" class="btn btn-primary mb-3">Agregar Plato</a>
     <table class="table mt-3">
     <thead>
         <tr>

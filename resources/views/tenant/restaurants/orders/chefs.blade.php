@@ -2,8 +2,8 @@
 
 @section('content')
 <div class="container">
-    <h1>Gestión de Pedidos</h1>
-    <a href="{{ route('orders.createView') }}" class="btn btn-primary mb-3">Crear Pedido</a>
+    <h1>Panel de Pedidos de Cocina</h1>
+    <!-- <a href="{{ route('orders.createView') }}" class="btn btn-primary mb-3">Crear Pedido</a> -->
 
     <table class="table table-bordered mt-3">
         <thead>
@@ -21,12 +21,12 @@
                 <td>Mesa {{ $order->table->number }}</td>
                 <td>{{ ucfirst($order->status) }}</td>
                 <td>
-                    <!-- Botón para agregar platillos -->
-                    <a href="{{ route('orderItems.list', $order->id) }}" class="btn btn-info">Gestión de Platillos</a>
+                    <!-- Botón para agregar Platos -->
+                    <a href="{{ route('orderItems.list', $order->id) }}" class="btn btn-info">Gestión de Platos</a>
                     <form action="{{ route('orders.updateStatus', $order->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PUT')
-                        <input type="hidden" name="status" value="ready">
+                        <input type="hidden" name="status" value="listo">
                         <button type="submit" class="btn btn-warning">Marcar Listo</button>
                     </form>
                 </td>
@@ -51,12 +51,12 @@
                             <td>Mesa ${order.table.number}</td>
                             <td>${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</td>
                             <td>
-                                <a href="/restaurants/orders/${order.id}/items" class="btn btn-info">Gestión de Platillos</a>
+                                <a href="/restaurants/orders/${order.id}/items" class="btn btn-info">Gestión de Platos</a>
                                 
                                 <form action="/restaurants/orders/${order.id}/status" method="POST" class="d-inline">
                                     @csrf
                                     @method('PUT')
-                                    <input type="hidden" name="status" value="ready">
+                                    <input type="hidden" name="status" value="listo">
                                     <button type="submit" class="btn btn-warning">Marcar Listo</button>
                                 </form>
                             </td>

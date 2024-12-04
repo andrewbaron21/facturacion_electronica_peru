@@ -68,7 +68,7 @@ class RestaurantController extends Controller
     public function polling()
     {
         // Recuperar todos los pedidos pendientes o listos
-        $orders = NewOrder::with('table')->whereIn('status', ['pending', 'ready'])->get();
+        $orders = NewOrder::with('table')->whereIn('status', ['pendiente', 'listo'])->get();
 
         // Retornar una respuesta JSON con los datos de los pedidos
         return response()->json(['orders' => $orders]);
@@ -154,7 +154,7 @@ class RestaurantController extends Controller
     
         $menu->update($data);
     
-        return redirect()->route('menus.index')->with('success', 'Platillo actualizado con éxito.');
+        return redirect()->route('menus.index')->with('success', 'Plato actualizado con éxito.');
     }
     
     public function editMenu($id)
@@ -168,7 +168,7 @@ class RestaurantController extends Controller
         $menu = Menu::findOrFail($id);
         $menu->delete();
 
-        return redirect()->route('menus.index')->with('success', 'Platillo eliminado con éxito.');
+        return redirect()->route('menus.index')->with('success', 'Platos eliminado con éxito.');
     }
 
     public function showCreateMenuForm()
@@ -267,7 +267,7 @@ class RestaurantController extends Controller
 
         // Consulta base para pedidos entregados
         $query = NewOrder::with(['table', 'items.menu'])
-            ->where('status', 'delivered');
+            ->where('status', 'entregado');
             // dd($query);
 
         // Aplicar filtro por fecha
@@ -295,7 +295,7 @@ class RestaurantController extends Controller
         $tableId = $request->input('table_id');
 
         $query = NewOrder::with(['table', 'items.menu'])
-            ->where('status', 'delivered');
+            ->where('status', 'entregado');
 
         if ($date) {
             $query->whereDate('updated_at', Carbon::parse($date));
@@ -313,25 +313,25 @@ class RestaurantController extends Controller
     // Polling para actualizar la lista de pedidos automáticamente
     public function pollOrders()
     {
-        $orders = NewOrder::with('table')->where('status', 'Pending')->get();
+        $orders = NewOrder::with('table')->where('status', 'pendiente')->get();
         return response()->json(['orders' => $orders], 200);
     }
 
     public function pollReadyOrders()
     {
-        $orders = NewOrder::with('table')->where('status', 'ready')->get();
+        $orders = NewOrder::with('table')->where('status', 'listo')->get();
         return response()->json(['orders' => $orders], 200);
     }
 
     public function indexChefsOrders()
     {
-        $orders = NewOrder::with('table')->where('status', 'Pending')->get(); // Relación con mesas
+        $orders = NewOrder::with('table')->where('status', 'pendiente')->get(); // Relación con mesas
         return view('tenant.restaurants.orders.chefs', compact('orders'));
     }
 
     public function indexWaitersOrders()
     {
-        $orders = NewOrder::with('table')->where('status', 'Pending')->get(); // Relación con mesas
+        $orders = NewOrder::with('table')->where('status', 'pendiente')->get(); // Relación con mesas
         return view('tenant.restaurants.orders.waiters', compact('orders'));
     }
    
@@ -349,7 +349,7 @@ class RestaurantController extends Controller
 
         NewOrder::create([
             'table_id' => $request->table_id,
-            'status' => 'pending',
+            'status' => 'pendiente',
         ]);
 
         return redirect()->route('orders.waiters')->with('success', 'Pedido creado exitosamente.');
@@ -358,7 +358,7 @@ class RestaurantController extends Controller
     public function updateOrderStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,ready,delivered',
+            'status' => 'required|in:pendiente,listo,entregado',
         ]);
 
         $order = NewOrder::findOrFail($id);
@@ -393,7 +393,7 @@ class RestaurantController extends Controller
      // Función para listar pedidos listos
      public function readyOrders()
      {
-         $orders = NewOrder::with('table')->where('status', 'ready')->get();
+         $orders = NewOrder::with('table')->where('status', 'listo')->get();
          return view('tenant.restaurants.orders.ready', compact('orders'));
      }
  
@@ -401,7 +401,7 @@ class RestaurantController extends Controller
      public function deliverOrder($id)
      {
          $order = NewOrder::findOrFail($id);
-         $order->update(['status' => 'delivered']);
+         $order->update(['status' => 'entregado']);
  
          return redirect()->route('orders.ready')->with('success', 'Pedido entregado exitosamente.');
      }
@@ -422,7 +422,7 @@ class RestaurantController extends Controller
             'price' => $menu->price,
         ]);
 
-        return redirect()->route('orderItems.list', $request->order_id)->with('success', 'Platillo agregado exitosamente.');
+        return redirect()->route('orderItems.list', $request->order_id)->with('success', 'Plato agregado exitosamente.');
     }
 
     public function deleteOrderItem($id)

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h1>Agregar Platillo</h1>
+    <h1>Añadir Plato a la Carta</h1>
     <form action="{{ route('menus.store') }}" method="POST" enctype="multipart/form-data"> <!-- Cambia la acción a menus.store -->
         @csrf
         <div class="form-group">
@@ -18,8 +18,12 @@
             <textarea name="description" class="form-control" rows="3"></textarea>
         </div>
         <div class="form-group">
-            <label>Imagen</label>
-            <input type="file" name="image" class="form-control">
+            <label for="customFile">Imagen</label>
+            <div class="custom-file-wrapper">
+                <input type="file" id="customFile" name="image" class="d-none"> <!-- Ocultamos el input -->
+                <button type="button" id="customButton" class="btn btn-secondary">Seleccionar imagen</button>
+                <span id="fileName" class="ml-2">No se ha seleccionado ninguna imagen</span>
+            </div>
         </div>
         <div class="form-group">
             <label>Restaurante</label>
@@ -32,4 +36,33 @@
         <button type="submit" class="btn btn-primary mt-3">Guardar</button>
     </form>
 </div>
+<style>
+    .custom-file-wrapper {
+        display: flex;
+        align-items: center;
+    }
+    #customButton {
+        margin-right: 10px;
+    }
+    #fileName {
+        font-style: italic;
+        color: gray;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const customFileInput = document.getElementById('customFile');
+        const customButton = document.getElementById('customButton');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        customButton.addEventListener('click', function () {
+            customFileInput.click(); // Abrimos el selector de archivos
+        });
+
+        customFileInput.addEventListener('change', function () {
+            const fileName = customFileInput.files[0]?.name || 'No se ha seleccionado ninguna imagen';
+            fileNameDisplay.textContent = fileName; // Actualizamos el nombre del archivo seleccionado
+        });
+    });
+</script>
 @endsection

@@ -1347,15 +1347,33 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                         </li>
                                     </ul>
                                 </li>
-                                <li>
-                                    <a class="nav-link" href="{{ route('orders.chefs') }}">
-                                        Ver pedidos cocina
+                                <!-- Pedidos de Cocina -->
+                                <li class="nav-parent">
+                                    <a class="nav-link" href="#">
+                                        <i class="fas fa-concierge-bell" aria-hidden="true"></i>
+                                        <span>Cocina</span>
                                     </a>
+                                    <ul class="nav nav-children">
+                                        <li>
+                                            <a class="nav-link" href="{{ route('orders.chefs') }}">
+                                                Ver Pedidos Cocina
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </li>
-                                <li>
-                                    <a class="nav-link" href="{{ route('orders.delivered') }}">
-                                        Pedidos Entregados
+                                <!-- Facturación -->
+                                <li class="nav-parent">
+                                    <a class="nav-link" href="#">
+                                        <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                                        <span>Facturación</span>
                                     </a>
+                                    <ul class="nav nav-children">
+                                        <li>
+                                            <a class="nav-link" href="{{ route('orders.delivered') }}">
+                                                Pedidos Entregados
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </li>
                                 <li>
                                     <a class="nav-link" href="{{ route('menus.available') }}">
