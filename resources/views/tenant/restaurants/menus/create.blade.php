@@ -26,10 +26,10 @@
             </div>
         </div>
         <div class="form-group">
-            <label>Restaurante</label>
-            <select name="restaurant_id" class="form-control" required>
-                @foreach($restaurants as $restaurant)
-                    <option value="{{ $restaurant->id }}">{{ $restaurant->name }}</option>
+            <label>Sucursal</label>
+            <select name="branch_id" class="form-control" required>
+                @foreach($branches as $branch)
+                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                 @endforeach
             </select>
         </div>

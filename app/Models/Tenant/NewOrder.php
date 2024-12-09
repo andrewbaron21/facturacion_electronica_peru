@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class NewOrder extends ModelTenant
 {
-    protected $fillable = ['table_id', 'status'];
+    protected $fillable = ['table_id', 'status', 'employee_id'];
 
     public function table()
     {
@@ -16,5 +16,9 @@ class NewOrder extends ModelTenant
     public function items()
     {
         return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
+    public function employee() { 
+        return $this->belongsTo(Employee::class); 
     }
 }

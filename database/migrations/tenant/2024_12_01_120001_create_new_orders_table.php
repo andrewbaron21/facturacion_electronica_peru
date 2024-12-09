@@ -16,9 +16,12 @@ class CreateNewOrdersTable extends Migration
         Schema::create('new_orders', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('table_id');
-            $table->string('status')->default('pending'); // pending/ready/delivered
+            $table->string('status')->default('pendiente'); 
+            $table->unsignedInteger('employee_id');
+            
             $table->timestamps();
-        
+            
+            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
             $table->foreign('table_id')->references('id')->on('tables')->onDelete('cascade');
         });
     }

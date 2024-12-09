@@ -37,18 +37,10 @@
         </div>
 
         <div class="form-group">
-            <label for="restaurant_id">Restaurante</label>
-            <select 
-                class="form-control @error('restaurant_id')" 
-                id="restaurant_id" 
-                name="restaurant_id" 
-                required
-            >
-                <option value="">Seleccione un restaurante</option>
-                @foreach($restaurants as $restaurant)
-                    <option value="{{ $restaurant->id }}" {{ old('restaurant_id') == $restaurant->id ? 'selected' : '' }}>
-                        {{ $restaurant->name }}
-                    </option>
+            <label>Sucursal</label>
+            <select name="branch_id" class="form-control" required>
+                @foreach($branches as $branch)
+                    <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                 @endforeach
             </select>
         </div>

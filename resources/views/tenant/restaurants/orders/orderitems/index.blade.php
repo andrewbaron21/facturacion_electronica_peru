@@ -5,6 +5,11 @@
     <h1>Ítems de Pedido #{{ $order->id }} (Mesa {{ $order->table->number }})</h1>
 
     <h3>Agregar Plato</h3>
+    @if(session('error'))
+        <div class="alert alert-danger mt-3">
+            {{ session('error') }}
+        </div>
+    @endif
     <form action="{{ route('orderItems.create') }}" method="POST">
         @csrf
         <input type="hidden" name="order_id" value="{{ $order->id }}">
@@ -27,6 +32,12 @@
         <button type="submit" class="btn btn-success">Agregar Plato</button>
     </form>
 
+    @if(session('success'))
+        <div class="alert alert-success mt-3">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <h3 class="mt-5">Lista de Ítems</h3>
     <table class="table table-bordered mt-3">
         <thead>
@@ -35,6 +46,7 @@
                 <th>Cantidad</th>
                 <th>Precio</th>
                 <th>Total</th>
+                <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -45,7 +57,15 @@
                 <td>{{ $item->quantity }}</td>
                 <td>${{ $item->price }}</td>
                 <td>${{ $item->quantity * $item->price }}</td>
+                <td>{{ ucfirst($item->status) }}</td>
                 <td>
+                    @if($item->status !== 'listo')
+                        <form action="{{ route('orderItems.markReady', $item->id) }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-warning">Marcar Listo</button>
+                        </form>
+                    @endif
                     <form action="{{ route('orderItems.delete', $item->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('DELETE')

@@ -18,6 +18,7 @@ class CreateOrderItemsTable extends Migration
             $table->unsignedBigInteger('order_id');
             $table->unsignedBigInteger('menu_id');
             $table->integer('quantity');
+            $table->string('status')->default('pendiente');
             $table->decimal('price', 8, 2);
             $table->timestamps();
         

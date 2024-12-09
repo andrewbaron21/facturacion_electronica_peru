@@ -8,13 +8,8 @@ class Restaurant extends ModelTenant
 {
     protected $fillable = ['name', 'address'];
 
-    public function menus()
+    public function branches()
     {
-        return $this->hasMany(Menu::class);
-    }
-
-    public function tables()
-    {
-        return $this->hasMany(Table::class);
+        return $this->hasMany(Branch::class);
     }
 }

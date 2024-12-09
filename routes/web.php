@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\EmployeeController;
 
 $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 
@@ -808,27 +809,45 @@ if ($hostname) {
                 
                 // Ruta para la vista de pedidos entregados
                 Route::get('/orders/delivered', 'RestaurantController@deliveredOrders')->name('orders.delivered');
+                
+                
+                // Polling
+                Route::get('orders/polling', 'RestaurantController@pollOrders')->name('orders.polling'); // Polling para actualizar lista
+                Route::get('orders/polling-waiters', 'RestaurantController@pollOrdersWaiters')->name('orders.polling.waiters'); // Polling para actualizar lista
+                Route::get('orders/ready/polling', 'RestaurantController@pollReadyOrders')->name('orders.ready.polling');
                 // Ruta para el polling de pedidos entregados
                 Route::get('/orders/delivered/polling', 'RestaurantController@pollDeliveredOrders')->name('orders.delivered.polling');
 
-                // Polling
-                Route::get('orders/polling', 'RestaurantController@pollOrders')->name('orders.polling'); // Polling para actualizar lista
-                Route::get('orders/ready/polling', 'RestaurantController@pollReadyOrders')->name('orders.ready.polling');
-
             });
 
+            // Branches
+            Route::get('restaurants/{restaurant}/branches', [RestaurantController::class, 'branches'])->name('branches.index');
+            Route::post('restaurants/{restaurant}/branches', [RestaurantController::class, 'storeBranch'])->name('branches.store');
+            Route::delete('branches/{branch}', [RestaurantController::class, 'destroyBranch'])->name('branches.destroy');
 
-
+            
             // Gestión de ítems de pedido
             Route::post('restaurants/orders/items', 'RestaurantController@addItemToOrder')->name('orderItems.create');
             Route::get('restaurants/orders/{orderId}/items', 'RestaurantController@listOrderItems')->name('orderItems.list');
             Route::delete('restaurants/orders/items/{id}', 'RestaurantController@deleteOrderItem')->name('orderItems.delete');
+            Route::put('/order-items/{id}/mark-ready', 'RestaurantController@markItemAsReady')->name('orderItems.markReady');
 
-            // Polling de pedidos
-            // Route::get('restaurants/orders/polling', 'RestaurantController@polling')->name('orders.polling');
-            // Route::get('restaurants/orders/polling', 'RestaurantController@pollOrders')->name('orders.polling');
+            // Employees
+            // Listar Empleados
+            Route::get('employees', 'EmployeeController@index')->name('employees.index');
 
+            // Mostrar Formulario de Creación de Empleados
+            Route::get('employees/create', 'EmployeeController@create')->name('employees.create');
 
+            // Almacenar Nuevo Empleado
+            Route::post('employees', 'EmployeeController@store')->name('employees.store');
+            Route::delete('employees/{id}', 'EmployeeController@destroy')->name('employees.destroy');
+
+            // Asignar Rol a un Empleado
+            Route::post('employees/assign-role', 'EmployeeController@assignRole')->name('employees.assignRole');
+            Route::delete('employees/{employee}/branches/roles', 'EmployeeController@removeRole')->name('employees.removeRole');
+
+            // Route::post('employees/assign-role', [EmployeeController::class, 'assignRole'])->name('employees.assign-role');
         });
     });
 } else {

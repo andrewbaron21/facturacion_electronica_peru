@@ -1,39 +1,21 @@
 @extends('tenant.layouts.app')
 
 @section('content')
-<div class="container">
-    <h1>Panel de Pedidos de Cocina</h1>
-    <!-- <a href="{{ route('orders.createView') }}" class="btn btn-primary mb-3">Crear Pedido</a> -->
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h1 class="display-4">Panel de Pedidos de Cocina</h1>
+        <p class="text-muted">
+            @if(auth()->user()->type === 'admin')
+                Visualizando todos los pedidos pendientes (Administrador)
+            @else
+                Visualizando pedidos de tu sede
+            @endif
+        </p>
+    </div>
 
-    <table class="table table-bordered mt-3">
-        <thead>
-            <tr>
-                <th>ID Pedido</th>
-                <th>Mesa</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="orders-list">
-            @foreach($orders as $order)
-            <tr>
-                <td>{{ $order->id }}</td>
-                <td>Mesa {{ $order->table->number }}</td>
-                <td>{{ ucfirst($order->status) }}</td>
-                <td>
-                    <!-- Botón para agregar Platos -->
-                    <a href="{{ route('orderItems.list', $order->id) }}" class="btn btn-info">Gestión de Platos</a>
-                    <form action="{{ route('orders.updateStatus', $order->id) }}" method="POST" class="d-inline">
-                        @csrf
-                        @method('PUT')
-                        <input type="hidden" name="status" value="listo">
-                        <button type="submit" class="btn btn-warning">Marcar Listo</button>
-                    </form>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <div id="branches-orders">
+        <p class="text-center text-muted">Cargando pedidos...</p>
+    </div>
 </div>
 
 <!-- Script para actualizar pedidos -->
@@ -42,27 +24,64 @@
         fetch("{{ route('orders.polling') }}")
             .then(response => response.json())
             .then(data => {
-                let ordersList = document.getElementById('orders-list');
-                ordersList.innerHTML = '';
+                let branchesOrders = document.getElementById('branches-orders');
+                branchesOrders.innerHTML = '';
+
+                if (data.orders.length === 0) {
+                    branchesOrders.innerHTML = `
+                        <div class="alert alert-info text-center" role="alert">
+                            No hay pedidos pendientes en este momento.
+                        </div>`;
+                    return;
+                }
+
+                let groupedOrders = {};
                 data.orders.forEach(order => {
-                    ordersList.innerHTML += `
-                        <tr>
-                            <td>${order.id}</td>
-                            <td>Mesa ${order.table.number}</td>
-                            <td>${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</td>
-                            <td>
-                                <a href="/restaurants/orders/${order.id}/items" class="btn btn-info">Gestión de Platos</a>
-                                
-                                <form action="/restaurants/orders/${order.id}/status" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="listo">
-                                    <button type="submit" class="btn btn-warning">Marcar Listo</button>
-                                </form>
-                            </td>
-                        </tr>
-                    `;
+                    if (!groupedOrders[order.branch_name]) {
+                        groupedOrders[order.branch_name] = [];
+                    }
+                    groupedOrders[order.branch_name].push(order);
                 });
+
+                for (let branch in groupedOrders) {
+                    branchesOrders.innerHTML += `
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Sede: ${branch}</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th scope="col">ID Pedido</th>
+                                            <th scope="col">Mesa</th>
+                                            <th scope="col">Estado</th>
+                                            <th scope="col">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${groupedOrders[branch].map(order => `
+                                            <tr>
+                                                <td>${order.id}</td>
+                                                <td>Mesa ${order.table_number}</td>
+                                                <td>
+                                                    <span class="badge bg-warning text-dark">
+                                                        ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="/restaurants/orders/${order.id}/items" class="btn btn-info btn-sm me-2">
+                                                        <i class="bi bi-eye"></i> Ver Platos
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
             });
     }, 5000);
 </script>

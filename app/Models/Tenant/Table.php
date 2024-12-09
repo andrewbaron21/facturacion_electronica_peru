@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Table extends ModelTenant
 {
-    protected $fillable = ['number', 'restaurant_id'];
+    protected $fillable = ['number', 'branch_id'];
 
-    public function restaurant()
+    public function branch()
     {
-        return $this->belongsTo(Restaurant::class);
+        return $this->belongsTo(Branch::class);
     }
 
     public function orders()

@@ -1313,15 +1313,14 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                         style="background: #ffc300;padding: 0px 3px;border-radius: 4px;">Beta</sup></span>
                             </a>
                             <ul class="nav nav-children">
-                                @php $restaurantExists = App\Models\Tenant\Restaurant::exists(); @endphp
-                                @if (!$restaurantExists)
-                                    <li>
-                                        <a class="nav-link" href="{{ route('restaurants.create') }}">
-                                            <i class="fas fa-plus-circle"></i>
-                                            <span>Crear Restaurante</span>
-                                        </a>
-                                    </li>
-                                @endif
+                              
+                                <li>
+                                    <a class="nav-link" href="{{ route('restaurants.create') }}">
+                                        <i class="fas fa-plus-circle"></i>
+                                        <span>Crear Restaurante</span>
+                                    </a>
+                                </li>
+                               
 
                                 <!-- Gestión de Pedidos -->
                                 <li class="nav-parent">
@@ -1426,11 +1425,188 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                                 </li>
                                             </ul>
                                         </li>
+
+                                        <!-- Gestión de Empleados -->
+                                        <li class="nav">
+                                            <a class="nav-link" href="#">
+                                                <i class="fas fa-users" aria-hidden="true"></i>
+                                                <span>Empleados</span>
+                                            </a>
+                                            <ul>
+                                                <li>
+                                                    <a class="nav-link" href="{{ route('employees.index') }}">
+                                                        Listar Empleados
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="nav-link" href="{{ route('employees.create') }}">
+                                                        Crear Empleado
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </li>
                                     </ul>
                                 </li>
                             </ul>
                         </li>
                     @endif
+
+
+                    @php
+                        use App\Models\Tenant\Employee;
+                        use Illuminate\Support\Facades\DB;
+
+                        // Obtener el usuario autenticado y verificar si es admin
+                        $isAdmin = DB::connection('tenant')->table('users')
+                                    ->where('email', auth()->user()->email)
+                                    ->value('type') === 'admin';
+
+                        // Si no es admin, obtener los roles del empleado autenticado
+                        if (!$isAdmin) {
+                            $employee = Employee::where('email', auth()->user()->email)->with('roles')->first();
+                            $roles = $employee ? $employee->roles->pluck('name')->toArray() : [];
+                        } else {
+                            $roles = []; // No importa para admin, ya que verá todos los botones
+                        }
+                    @endphp
+
+                    @if (in_array('restaurant_app', $vc_modules))
+                        <li class="nav-parent {{ $firstLevel === 'restaurant' ? 'nav-active nav-expanded' : '' }}">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-utensils" aria-hidden="true"></i>
+                                <span>Restaurante <sup style="background: #ffc300; padding: 0px 3px; border-radius: 4px;">Beta</sup></span>
+                            </a>
+                            <ul class="nav nav-children">
+                                @if ($isAdmin)
+                                    <li>
+                                        <a class="nav-link" href="{{ route('restaurants.create') }}">
+                                            <i class="fas fa-store"></i> <!-- Cambié el ícono aquí -->
+                                            <span>Restaurante y Sedes</span>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if ($isAdmin || in_array('Mesero', $roles))
+                                    <!-- Gestión de Pedidos -->
+                                    <li class="nav-parent">
+                                        <a class="nav-link" href="#">
+                                            <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                                            <span>Meseros</span>
+                                        </a>
+                                        <ul class="nav nav-children">
+                                            <li><a class="nav-link" href="{{ route('orders.createView') }}">Crear Pedido</a></li>
+                                            <li><a class="nav-link" href="{{ route('orders.waiters') }}">Gestionar Pedidos Mesero</a></li>
+                                            <li><a class="nav-link" href="{{ route('orders.ready') }}">Pedidos Listos</a></li>
+                                        </ul>
+                                    </li>
+                                @endif
+
+                                @if ($isAdmin || in_array('Cocinero', $roles))
+                                    <!-- Pedidos de Cocina -->
+                                    <li class="nav-parent">
+                                        <a class="nav-link" href="#">
+                                            <i class="fas fa-concierge-bell" aria-hidden="true"></i>
+                                            <span>Cocina</span>
+                                        </a>
+                                        <ul class="nav nav-children">
+                                            <li><a class="nav-link" href="{{ route('orders.chefs') }}">Ver Pedidos Cocina</a></li>
+                                        </ul>
+                                    </li>
+                                @endif
+
+                                @if ($isAdmin || in_array('Caja', $roles))
+                                    <!-- Facturación -->
+                                    <li class="nav-parent">
+                                        <a class="nav-link" href="#">
+                                            <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                                            <span>Facturación</span>
+                                        </a>
+                                        <ul class="nav nav-children">
+                                            <li><a class="nav-link" href="{{ route('orders.delivered') }}">Pedidos Entregados</a></li>
+                                        </ul>
+                                    </li>
+                                @endif
+
+                                <li>
+                                    <a class="nav-link" href="{{ route('menus.available') }}">
+                                        Ver Menú
+                                    </a>
+                                </li>
+                                @if ($isAdmin)
+                                    <!-- Configuración -->
+                                    <li class="nav-parent">
+                                        <a class="nav-link" href="#">
+                                            <i class="fas fa-cogs" aria-hidden="true"></i>
+                                            <span>Configuración</span>
+                                        </a>
+                                        <ul class="nav nav-children">
+                                            <!-- Gestión de Mesas -->
+                                            <li class="nav">
+                                                <a class="nav-link" href="#">
+                                                    <i class="fas fa-chair" aria-hidden="true"></i>
+                                                    <span>Mesas</span>
+                                                </a>
+                                                <ul>
+                                                    <li>
+                                                        <a class="nav-link" href="{{ route('tables.list') }}"> <!-- Cambia "1" por el ID dinámico del restaurante -->
+                                                            Listar Mesas
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="nav-link" href="{{ route('tables.showCreateForm') }}">
+                                                            Crear Mesa
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+
+                                            <!-- Gestión de Menús -->
+                                            <li class="nav">
+                                                <a class="nav-link" href="#">
+                                                    <i class="fas fa-book-open" aria-hidden="true"></i>
+                                                    <span>Menú</span>
+                                                </a>
+                                                <ul>
+                                                    <li>
+                                                        <a class="" href="{{ route('menus.index') }}">
+                                                            Listar Menús
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="nav-link" href="{{ route('menus.create') }}">
+                                                            Crear Menú
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+
+                                            <!-- Gestión de Empleados -->
+                                            <li class="nav">
+                                                <a class="nav-link" href="#">
+                                                    <i class="fas fa-users" aria-hidden="true"></i>
+                                                    <span>Empleados</span>
+                                                </a>
+                                                <ul>
+                                                    <li>
+                                                        <a class="nav-link" href="{{ route('employees.index') }}">
+                                                            Listar Empleados
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="nav-link" href="{{ route('employees.create') }}">
+                                                            Crear Empleado
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                @endif
+
+                            </ul>
+                        </li>
+                    @endif
+
+
 
                     @if (in_array('generate_link_app', $vc_modules))
                         <li class="{{ $firstLevel === 'payment-links' ? 'nav-active' : '' }}">

@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Menu extends ModelTenant
 {
-    protected $fillable = ['name', 'price', 'status', 'restaurant_id',  'description', 'image'];
+    protected $fillable = ['name', 'price', 'status', 'branch_id', 'description', 'image'];
 
-    public function restaurant()
+    public function branch()
     {
-        return $this->belongsTo(Restaurant::class);
+        return $this->belongsTo(Branch::class);
     }
 
     public function orderItems()
