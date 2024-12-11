@@ -1308,6 +1308,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                     @php
                         use App\Models\Tenant\Employee;
                         use Illuminate\Support\Facades\DB;
+                        use App\Models\Tenant\Branch;
 
                         // Obtener el usuario autenticado y verificar si es admin
                         $isAdmin = DB::connection('tenant')->table('users')
@@ -1321,6 +1322,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                         } else {
                             $roles = []; // No importa para admin, ya que verá todos los botones
                         }
+                        $branches = Branch::all();
                     @endphp
 
                     @if (in_array('restaurant_app', $vc_modules))
@@ -1379,10 +1381,20 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                     </li>
                                 @endif
 
-                                <li>
-                                    <a class="nav-link" href="{{ route('menus.available') }}">
-                                        Ver Menú
+                                <li class="nav-parent">
+                                    <a class="nav-link" href="#">
+                                        <i class="fas fa-book-open" aria-hidden="true"></i>
+                                        <span>Menús por Sede</span>
                                     </a>
+                                    <ul class="nav nav-children">
+                                        @foreach ($branches as $branch)
+                                            <li>
+                                                <a class="nav-link" href="{{ route('menus.available', ['branchId' => $branch->id]) }}" target="_blank">
+                                                    {{ $branch->name }}
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
                                 </li>
                                 @if ($isAdmin)
                                     <!-- Configuración -->

@@ -200,14 +200,21 @@ class RestaurantController extends Controller
         return view('tenant.restaurants.menus.create', compact('branches'));
     }
 
-    public function showAvailableMenus()
+    public function showAvailableMenus($branchId)
     {
-        // Obtener los menús disponibles
-        $menus = Menu::where('status', true)->get();
-
+        // Verificar que la sede exista
+        $branch = Branch::find($branchId);
+    
+        if (!$branch) {
+            return redirect()->back()->withErrors(['error' => 'Sede no encontrada']);
+        }
+    
+        // Obtener los menús disponibles para la sede
+        $menus = Menu::where('status', true)->where('branch_id', $branchId)->get();
+    
         // Retornar la vista con los menús
-        return view('tenant.restaurants.menus.available', compact('menus'));
-    }
+        return view('tenant.restaurants.menus.available', compact('menus', 'branch'));
+    }    
 
     public function storeTable(Request $request)
     {

@@ -29,7 +29,7 @@ if ($hostname) {
         Route::get('purchases/print/{external_id}/{format?}', 'Tenant\PurchaseController@toPrint');
 
         Route::get('quotations/print/{external_id}/{format?}', 'Tenant\QuotationController@toPrint');
-        Route::get('/menus/available', 'RestaurantController@showAvailableMenus')->name('menus.available');
+        Route::get('/menus/{branchId}/available', 'RestaurantController@showAvailableMenus')->name('menus.available');
 
         Route::middleware(['auth', 'redirect.module', 'locked.tenant'])->group(function () {
             // Route::get('catalogs', 'Tenant\CatalogController@index')->name('tenant.catalogs.index');
