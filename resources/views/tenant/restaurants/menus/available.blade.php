@@ -117,11 +117,11 @@
     <div class="menu-grid">
         @foreach($menus as $menu)
         <div class="menu-item">
-            <img src="{{ asset('storage/' . $menu->image) }}" alt="{{ $menu->name }}">
+            <img src="{{ asset('storage/' . $menu->item->image) }}" alt="{{ $menu->item->name }}">
             <div class="menu-content">
-                <h2 class="menu-title">{{ $menu->name }}</h2>
-                <p class="menu-price">S/ {{ number_format($menu->price, 2) }}</p>
-                <p class="menu-description">{{ $menu->description }}</p>
+                <h2 class="menu-title">{{ $menu->item->name }}</h2>
+                <p class="menu-price">S/ {{ number_format($menu->item->sale_unit_price, 2) }}</p>
+                <p class="menu-description">{{ $menu->item->description }}</p>
                 <!-- <a href="#" class="menu-button">Agregar al Pedido</a> -->
             </div>
         </div>

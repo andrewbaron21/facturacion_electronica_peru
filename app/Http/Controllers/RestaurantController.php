@@ -111,7 +111,25 @@ class RestaurantController extends Controller
 
     public function indexMenus()
     {
-        $branches = Branch::with('menus')->get();
+        // Obtener todas las sedes con sus menús e información del producto (item)
+        $branches = DB::connection('tenant')->table('branches')
+            ->leftJoin('menus', 'branches.id', '=', 'menus.branch_id')
+            ->leftJoin('items', 'menus.item_id', '=', 'items.id')
+            ->select(
+                'branches.id as branch_id',
+                'branches.name as branch_name',
+                'branches.address',
+                'branches.phone',
+                'items.name as menu_name',
+                'items.sale_unit_price as menu_price',
+                'items.currency_type_id as menu_currency',
+                'items.description as menu_description',
+                'items.image as menu_image',
+                'menus.id as menu_id'
+            )
+            ->orderBy('branches.id')
+            ->get()
+            ->groupBy('branch_id');
 
         return view('tenant.restaurants.menus.index', compact('branches'));
     }
@@ -121,6 +139,7 @@ class RestaurantController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'price' => 'required|numeric',
+            'currency' => 'required|in:USD,PEN', // Validación para el campo Tipo de Moneda
             'branch_id' => [
                 'required',
                 function ($attribute, $value, $fail) {
@@ -128,71 +147,139 @@ class RestaurantController extends Controller
                         ->table('branches')
                         ->where('id', $value)
                         ->exists();
-
+    
                     if (!$exists) {
                         $fail('El ID de la Sede no existe en la base de datos de tenant.');
                     }
                 },
             ],
             'description' => 'nullable|string',
-            'image' => 'nullable|file|mimes:jpeg,png,jpg|max:2048', // Validación del archivo como archivo genérico
+            'image' => 'nullable|file|mimes:jpeg,png,jpg|max:2048', // Validación del archivo
         ]);
-
+    
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-
-        $data = $request->all();
-
-        if ($request->hasFile('image')) { // Verifica la presencia del archivo
-            // Guarda la imagen en el disco público
-            $path = $request->file('image')->store('menu_images', 'public');
-            $data['image'] = $path; // Guarda solo el path relativo en la base de datos
+    
+        // Preparar datos del producto (item)
+        $itemData = [
+            'name' => $request->name,
+            'sale_unit_price' => $request->price,
+            'description' => $request->description,
+            'image' => null, // Esto se actualizará si hay una imagen
+            'apply_restaurant' => true,
+            'item_type_id' => '01',
+            'unit_type_id' => 'NIU',
+            'currency_type_id' => $request->currency, // Guardar el tipo de moneda
+            'sale_affectation_igv_type_id' => '10',
+            'purchase_affectation_igv_type_id' => '10',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    
+        // Guardar la imagen, si existe
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('item_images', 'public');
+            $itemData['image'] = $path;
         }
-
-        Menu::create($data);
-
+    
+        // Crear el producto (item) en la tabla `items`
+        $itemId = DB::connection('tenant')->table('items')->insertGetId($itemData);
+    
+        // Crear el menú asociado
+        Menu::create([
+            'item_id' => $itemId,
+            'branch_id' => $request->branch_id,
+        ]);
+    
         return redirect()->route('menus.index')->with('success', 'Menú creado exitosamente.');
+    }   
+
+    public function editMenu($id)
+    {
+        $menu = DB::connection('tenant')->table('menus')
+            ->join('items', 'menus.item_id', '=', 'items.id')
+            ->select(
+                'menus.id as menu_id',
+                'items.name',
+                'items.sale_unit_price as price',
+                'items.currency_type_id as currency',
+                'items.status',
+                'items.description',
+                'items.image'
+            )
+            ->where('menus.id', $id)
+            ->first();
+    
+        if (!$menu) {
+            abort(404, 'Menú no encontrado');
+        }
+    
+        return view('tenant.restaurants.menus.edit', compact('menu'));
     }
-      
+    
     public function updateMenu(Request $request, $id)
     {
         $request->validate([
-            'name' => 'string',
-            'price' => 'numeric',
-            'status' => 'boolean',
+            'name' => 'required|string',
+            'price' => 'required|numeric',
+            'currency' => 'required|in:USD,PEN', // Validación del tipo de moneda
+            'status' => 'required|boolean',
             'description' => 'nullable|string',
             'image' => 'nullable|mimes:jpg,png,jpeg|max:2048',
         ]);
-    
-        $menu = Menu::findOrFail($id);
-    
-        $data = $request->all();
-    
-        if ($request->hasFile('image')) {
-            // Guarda la nueva imagen en el disco público
-            $path = $request->file('image')->store('menu_images', 'public');
-            $data['image'] = $path;
+
+        // Verificar existencia del menú
+        $menu = DB::connection('tenant')->table('menus')->where('id', $id)->first();
+        if (!$menu) {
+            abort(404, 'Menú no encontrado');
         }
-    
-        $menu->update($data);
-    
-        return redirect()->route('menus.index')->with('success', 'Plato actualizado con éxito.');
-    }
-    
-    public function editMenu($id)
-    {
-        $menu = Menu::findOrFail($id);
-        return view('tenant.restaurants.menus.edit', compact('menu'));
+
+        // Obtener el ítem relacionado
+        $item = DB::connection('tenant')->table('items')->where('id', $menu->item_id)->first();
+        if (!$item) {
+            abort(404, 'Item relacionado no encontrado');
+        }
+
+        // Preparar datos para actualizar el ítem
+        $itemData = [
+            'name' => $request->name,
+            'sale_unit_price' => $request->price,
+            'currency_type_id' => $request->currency,
+            'status' => $request->status,
+            'description' => $request->description,
+            'updated_at' => now(),
+        ];
+
+        // Si hay una nueva imagen, guardarla
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('item_images', 'public');
+            $itemData['image'] = $path;
+        }
+
+        // Actualizar el ítem
+        DB::connection('tenant')->table('items')->where('id', $menu->item_id)->update($itemData);
+
+        return redirect()->route('menus.index')->with('success', 'Menú actualizado con éxito.');
     }
 
     public function destroyMenu($id)
     {
-        $menu = Menu::findOrFail($id);
-        $menu->delete();
-
-        return redirect()->route('menus.index')->with('success', 'Platos eliminado con éxito.');
-    }
+        // Buscar el menú en la base de datos tenant
+        $menu = DB::connection('tenant')->table('menus')->where('id', $id)->first();
+    
+        if (!$menu) {
+            abort(404, 'Menú no encontrado');
+        }
+    
+        // Eliminar el ítem relacionado
+        DB::connection('tenant')->table('items')->where('id', $menu->item_id)->delete();
+    
+        // Eliminar el menú
+        DB::connection('tenant')->table('menus')->where('id', $id)->delete();
+    
+        return redirect()->route('menus.index')->with('success', 'Menú eliminado con éxito.');
+    }    
 
     public function showCreateMenuForm()
     {
@@ -209,12 +296,12 @@ class RestaurantController extends Controller
             return redirect()->back()->withErrors(['error' => 'Sede no encontrada']);
         }
     
-        // Obtener los menús disponibles para la sede
-        $menus = Menu::where('status', true)->where('branch_id', $branchId)->get();
+        // Obtener los menús disponibles para la sede con sus items asociados
+        $menus = Menu::with('item')->where('branch_id', $branchId)->get();
     
         // Retornar la vista con los menús
         return view('tenant.restaurants.menus.available', compact('menus', 'branch'));
-    }    
+    }
 
     public function storeTable(Request $request)
     {
@@ -302,7 +389,7 @@ class RestaurantController extends Controller
 
         if ($isAdmin) {
             // Administrador: obtiene todas las órdenes entregadas y todas las mesas
-            $query = NewOrder::with(['table', 'items.menu'])->where('status', 'entregado');
+            $query = NewOrder::with(['table', 'items.menu.item'])->where('status', 'entregado');
             $tables = Table::all();
         } else {
             // Empleado: obtiene las órdenes entregadas y mesas de su sede
@@ -319,7 +406,7 @@ class RestaurantController extends Controller
                 return redirect()->back()->withErrors(['error' => 'Debe estar asignado a una sede para acceder a las órdenes entregadas.']);
             }
 
-            $query = NewOrder::with(['table', 'items.menu'])
+            $query = NewOrder::with(['table', 'items.menu.item'])
                 ->where('status', 'entregado')
                 ->whereHas('table.branch', function ($q) use ($branchId) {
                     $q->where('id', $branchId);
@@ -352,8 +439,50 @@ class RestaurantController extends Controller
         $tableId = $request->input('table_id');
 
         if ($isAdmin) {
+            $query = NewOrder::with(['table', 'items.menu.item'])->where('status', 'entregado');
+        } else {
+            $employee = Employee::where('email', auth()->user()->email)->first();
+            if (!$employee) {
+                return response()->json(['error' => 'Empleado no encontrado'], 404);
+            }
+
+            $branchId = DB::connection('tenant')->table('branch_employee_roles')
+                ->where('employee_id', $employee->id)
+                ->value('branch_id');
+
+            $query = NewOrder::with(['table', 'items.menu.item'])
+                ->where('status', 'entregado')
+                ->whereHas('table.branch', function ($q) use ($branchId) {
+                    $q->where('id', $branchId);
+                });
+        }
+
+        // Aplicar filtros
+        if ($date) {
+            $query->whereDate('updated_at', Carbon::parse($date));
+        }
+
+        if ($tableId) {
+            $query->where('table_id', $tableId);
+        }
+
+        $orders = $query->get();
+
+        return response()->json(['orders' => $orders]);
+    }
+
+    public function invoicedOrders(Request $request)
+    {
+        $isAdmin = DB::connection('tenant')->table('users')
+            ->where('email', auth()->user()->email)
+            ->value('type') === 'admin';
+
+        $date = $request->input('date');
+        $tableId = $request->input('table_id');
+
+        if ($isAdmin) {
             // Administrador: obtiene todas las órdenes entregadas y todas las mesas
-            $query = NewOrder::with(['table', 'items.menu'])->where('status', 'entregado');
+            $query = NewOrder::with(['table', 'items.menu.item'])->where('status', 'facturado');
             $tables = Table::all();
         } else {
             // Empleado: obtiene las órdenes entregadas y mesas de su sede
@@ -370,8 +499,8 @@ class RestaurantController extends Controller
                 return redirect()->back()->withErrors(['error' => 'Debe estar asignado a una sede para acceder a las órdenes entregadas.']);
             }
 
-            $query = NewOrder::with(['table', 'items.menu'])
-                ->where('status', 'entregado')
+            $query = NewOrder::with(['table', 'items.menu.item'])
+                ->where('status', 'facturado')
                 ->whereHas('table.branch', function ($q) use ($branchId) {
                     $q->where('id', $branchId);
                 });
@@ -390,7 +519,63 @@ class RestaurantController extends Controller
 
         $orders = $query->get();
 
-        return view('tenant.restaurants.orders.delivered', compact('orders', 'tables', 'isAdmin'));
+        return view('tenant.restaurants.orders.invoiced', compact('orders', 'tables', 'isAdmin'));
+    }
+
+    public function pollInvoicedOrders(Request $request)
+    {
+        $isAdmin = DB::connection('tenant')->table('users')
+            ->where('email', auth()->user()->email)
+            ->value('type') === 'admin';
+
+        $date = $request->input('date');
+        $tableId = $request->input('table_id');
+
+        if ($isAdmin) {
+            $query = NewOrder::with(['table', 'items.menu.item'])->where('status', 'facturado');
+        } else {
+            $employee = Employee::where('email', auth()->user()->email)->first();
+            if (!$employee) {
+                return response()->json(['error' => 'Empleado no encontrado'], 404);
+            }
+
+            $branchId = DB::connection('tenant')->table('branch_employee_roles')
+                ->where('employee_id', $employee->id)
+                ->value('branch_id');
+
+            $query = NewOrder::with(['table', 'items.menu.item'])
+                ->where('status', 'facturado')
+                ->whereHas('table.branch', function ($q) use ($branchId) {
+                    $q->where('id', $branchId);
+                });
+        }
+
+        // Aplicar filtros
+        if ($date) {
+            $query->whereDate('updated_at', Carbon::parse($date));
+        }
+
+        if ($tableId) {
+            $query->where('table_id', $tableId);
+        }
+
+        $orders = $query->get();
+
+        return response()->json(['orders' => $orders]);
+    }
+
+    public function markAsPaid($id)
+    {
+        $order = NewOrder::find($id);
+
+        if (!$order) {
+            return redirect()->back()->withErrors(['error' => 'Orden no encontrada']);
+        }
+
+        $order->status = 'facturado';
+        $order->save();
+
+        return redirect()->back()->with('success', 'La orden ha sido marcada como pagada');
     }
 
     public function pollOrders()
@@ -476,30 +661,56 @@ class RestaurantController extends Controller
         return response()->json(['orders' => $orders], 200);
     }
 
+    public function readyOrders() 
+    {
+        $isAdmin = DB::connection('tenant')->table('users')
+            ->where('email', auth()->user()->email)
+            ->value('type') === 'admin';
+
+        if ($isAdmin) {
+            // Administrador: obtiene todas las órdenes con estado "listo"
+            $orders = NewOrder::with(['table', 'items.menu'])->where('status', 'listo')->get();
+        } else {
+            // Empleado: obtiene solo las órdenes con estado "listo" que corresponden al empleado autenticado
+            $employee = Employee::where('email', auth()->user()->email)->first();
+
+            if (!$employee) {
+                return redirect()->back()->withErrors(['error' => 'Empleado no encontrado']);
+            }
+
+            $orders = NewOrder::with(['table', 'items.menu'])
+                ->where('status', 'listo')
+                ->where('employee_id', $employee->id)
+                ->get();
+        }
+
+        return view('tenant.restaurants.orders.ready', compact('orders'));
+    }
+
     public function pollReadyOrders()
     {
         $isAdmin = DB::connection('tenant')->table('users')
             ->where('email', auth()->user()->email)
             ->value('type') === 'admin';
-    
+
         if ($isAdmin) {
             // Administrador: obtiene todas las órdenes con estado "listo"
-            $orders = NewOrder::with('table')->where('status', 'listo')->get();
+            $orders = NewOrder::with(['table', 'items.menu.item'])->where('status', 'listo')->get();
         } else {
             // Empleado: obtiene solo las órdenes con estado "listo" que corresponden al empleado autenticado
             $employee = Employee::where('email', auth()->user()->email)->first();
-    
+
             if (!$employee) {
                 return response()->json(['error' => 'Empleado no encontrado'], 404);
             }
-    
-            $orders = NewOrder::with('table')
+
+            $orders = NewOrder::with(['table', 'items.menu.item'])
                 ->where('status', 'listo')
-                ->where('employee_id', $employee->id) // Filtrar por el ID del empleado autenticado
+                ->where('employee_id', $employee->id)
                 ->get();
         }
-    
-        return response()->json(['orders' => $orders], 200);
+
+        return response()->json(['orders' => $orders]);
     }
 
     public function indexChefsOrders()
@@ -538,24 +749,24 @@ class RestaurantController extends Controller
         $isAdmin = DB::connection('tenant')->table('users')
             ->where('email', auth()->user()->email)
             ->value('type') === 'admin';
-
+    
         if ($isAdmin) {
-            // Administrador: obtiene todas las órdenes pendientes con ítems
-            $orders = NewOrder::with(['table.branch', 'items.menu'])->where('status', 'pendiente')->get();
+            // Administrador: obtener todas las órdenes pendientes con ítems relacionados
+            $orders = NewOrder::with(['table.branch', 'items.menu.item'])->where('status', 'pendiente')->get();
         } else {
-            // Mesero: obtiene las órdenes pendientes del empleado autenticado con ítems
+            // Mesero: obtener las órdenes pendientes solo para el empleado autenticado
             $employee = Employee::where('email', auth()->user()->email)->first();
-
+    
             if (!$employee) {
                 return redirect()->back()->withErrors(['error' => 'Debe estar registrado como empleado para gestionar pedidos.']);
             }
-
-            $orders = NewOrder::with(['table.branch', 'items.menu'])
+    
+            $orders = NewOrder::with(['table.branch', 'items.menu.item'])
                 ->where('status', 'pendiente')
                 ->where('employee_id', $employee->id)
                 ->get();
         }
-
+    
         return view('tenant.restaurants.orders.waiters', compact('orders', 'isAdmin'));
     }
 
@@ -630,26 +841,39 @@ class RestaurantController extends Controller
         $order->delete();
 
         return redirect()->route('orders.waiters')->with('success', 'Pedido eliminado exitosamente.');
+    } 
+ 
+    // Función para actualizar el estado del pedido a "entregado"
+    public function deliverOrder($id)
+    {
+        $order = NewOrder::findOrFail($id);
+        $order->update(['status' => 'entregado']);
+
+        return redirect()->route('orders.ready')->with('success', 'Pedido enviado a facturación exitosamente');
     }
-    
+
     public function listOrderItems($orderId)
     {
+        $isAdmin = DB::connection('tenant')->table('users')
+            ->where('email', auth()->user()->email)
+            ->value('type') === 'admin';
+
         $user = auth()->user();
-    
+
         // Validar si el usuario es administrador
         $isAdmin = DB::connection('tenant')->table('users')
             ->where('email', $user->email)
             ->value('type') === 'admin';
-    
+
         // Obtener los menús según el rol del usuario
         if ($isAdmin) {
-            $menus = Menu::all();
+            $menus = Menu::with('item')->get(); // Cargar menús con los ítems relacionados
         } else {
             $employee = Employee::where('email', $user->email)->first();
             if (!$employee) {
                 return redirect()->back()->withErrors(['error' => 'Empleado no encontrado']);
             }
-    
+
             // Obtener la sede del empleado
             $branchId = DB::connection('tenant')->table('branch_employee_roles')
                 ->where('employee_id', $employee->id)
@@ -658,51 +882,16 @@ class RestaurantController extends Controller
             if (!$branchId) {
                 return redirect()->back()->withErrors(['error' => 'No se pudo determinar la sede del empleado.']);
             }
-    
-            // Filtrar los menús por la sede
-            $menus = Menu::where('branch_id', $branchId)->get();
+
+            // Filtrar los menús por la sede y cargar los ítems relacionados
+            $menus = Menu::with('item')->where('branch_id', $branchId)->get();
         }
-    
+
+        // Obtener el pedido y los ítems del pedido
         $order = NewOrder::with('table')->findOrFail($orderId);
-        $orderItems = OrderItem::where('order_id', $orderId)->with('menu')->get();
-    
-        return view('tenant.restaurants.orders.orderitems.index', compact('order', 'orderItems', 'menus'));
-    }  
-    
+        $orderItems = OrderItem::where('order_id', $orderId)->with('menu.item')->get();
 
-    public function readyOrders()
-    {
-        $isAdmin = DB::connection('tenant')->table('users')
-            ->where('email', auth()->user()->email)
-            ->value('type') === 'admin';
-
-        if ($isAdmin) {
-            // Administrador: obtiene todas las órdenes con estado "listo"
-            $orders = NewOrder::with('table')->where('status', 'listo')->get();
-        } else {
-            // Empleado: obtiene solo las órdenes con estado "listo" que corresponden al empleado autenticado
-            $employee = Employee::where('email', auth()->user()->email)->first();
-
-            if (!$employee) {
-                return redirect()->back()->withErrors(['error' => 'Empleado no encontrado']);
-            }
-
-            $orders = NewOrder::with('table')
-                ->where('status', 'listo')
-                ->where('employee_id', $employee->id) // Filtrar por el ID del empleado autenticado
-                ->get();
-        }
-
-        return view('tenant.restaurants.orders.ready', compact('orders'));
-    }
- 
-    // Función para actualizar el estado del pedido a "entregado"
-    public function deliverOrder($id)
-    {
-        $order = NewOrder::findOrFail($id);
-        $order->update(['status' => 'entregado']);
-
-        return redirect()->route('orders.ready')->with('success', 'Pedido entregado exitosamente.');
+        return view('tenant.restaurants.orders.orderitems.index', compact('order', 'orderItems', 'menus', 'isAdmin'));
     }
 
     public function addItemToOrder(Request $request)
@@ -714,8 +903,14 @@ class RestaurantController extends Controller
             ->where('email', $user->email)
             ->value('type') === 'admin';
 
-        // Verificar que el menú pertenece a la sede si no es administrador
-        $menu = Menu::findOrFail($request->menu_id);
+        // Buscar el menú y validar que existe su ítem relacionado
+        $menu = Menu::with('item')->findOrFail($request->menu_id);
+
+        if (!$menu->item) {
+            return redirect()->back()->withErrors(['error' => 'El menú seleccionado no tiene un ítem relacionado.']);
+        }
+
+        // Si no es administrador, validar que la sede coincide
         if (!$isAdmin) {
             $employee = Employee::where('email', $user->email)->first();
             if (!$employee) {
@@ -732,12 +927,12 @@ class RestaurantController extends Controller
             }
         }
 
-        // Crear el ítem de la orden
+        // Crear el ítem de la orden utilizando el precio del ítem
         OrderItem::create([
             'order_id' => $request->order_id,
             'menu_id' => $menu->id,
             'quantity' => $request->quantity,
-            'price' => $menu->price,
+            'price' => $menu->item->sale_unit_price, // Tomamos el precio del ítem
         ]);
 
         // Actualizar el estado de la orden a "pendiente"

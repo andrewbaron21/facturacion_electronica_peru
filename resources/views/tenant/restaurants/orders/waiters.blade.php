@@ -56,13 +56,13 @@
                         </thead>
                         <tbody>
                             @foreach($order->items as $item)
-                            <tr>
-                                <td>{{ $item->menu->name ?? 'Sin nombre' }}</td>
-                                <td>{{ $item->quantity }}</td>
-                                <td>${{ $item->price }}</td>
-                                <td>${{ $item->quantity * $item->price }}</td>
-                                <td>{{ ucfirst($item->status) }}</td>
-                            </tr>
+                                <tr>
+                                    <td>{{ $item->menu->item ? $item->menu->item->name : 'Sin información' }}</td>
+                                    <td>{{ $item->quantity }}</td>
+                                    <td>${{ $item->menu->item ? $item->menu->item->sale_unit_price : 'N/A' }}</td>
+                                    <td>${{ $item->quantity * ($item->menu->item ? $item->menu->item->sale_unit_price : 0) }}</td>
+                                    <td>{{ ucfirst($item->status) }}</td>
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -74,7 +74,6 @@
             </tr>
             @endforelse
         </tbody>
-
     </table>
 </div>
 

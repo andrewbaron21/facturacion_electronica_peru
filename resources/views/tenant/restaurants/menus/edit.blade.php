@@ -15,7 +15,7 @@
         </div>
     @endif
 
-    <form action="{{ route('menus.update', $menu->id) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('menus.update', $menu->menu_id) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -26,6 +26,13 @@
         <div class="form-group">
             <label>Precio</label>
             <input type="number" step="0.01" name="price" class="form-control" value="{{ $menu->price }}" required>
+        </div>
+        <div class="form-group">
+            <label>Tipo de Moneda</label>
+            <select name="currency" class="form-control" required>
+                <option value="USD" {{ $menu->currency === 'USD' ? 'selected' : '' }}>Dólares (USD)</option>
+                <option value="PEN" {{ $menu->currency === 'PEN' ? 'selected' : '' }}>Soles (PEN)</option>
+            </select>
         </div>
         <div class="form-group">
             <label>Estado</label>
@@ -72,22 +79,22 @@
         const previewImage = document.getElementById('previewImage');
 
         customButton.addEventListener('click', function () {
-            customFileInput.click(); // Abrimos el selector de imagen
+            customFileInput.click();
         });
 
         customFileInput.addEventListener('change', function () {
             const file = customFileInput.files[0];
             if (file) {
-                fileNameDisplay.textContent = file.name; // Actualizamos el nombre del archivo
+                fileNameDisplay.textContent = file.name;
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    previewImage.src = e.target.result; // Cargamos la previsualización
-                    newImagePreview.style.display = 'block'; // Mostramos el contenedor de la nueva imagen
+                    previewImage.src = e.target.result;
+                    newImagePreview.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
             } else {
                 fileNameDisplay.textContent = 'No se ha seleccionado ninguna imagen';
-                newImagePreview.style.display = 'none'; // Ocultamos el contenedor si no se selecciona nada
+                newImagePreview.style.display = 'none';
             }
         });
     });

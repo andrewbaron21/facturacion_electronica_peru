@@ -14,6 +14,13 @@
             <input type="number" step="0.01" name="price" class="form-control" required>
         </div>
         <div class="form-group">
+            <label>Tipo de Moneda</label>
+            <select name="currency" class="form-control" required>
+                <option value="USD">Dólares Americanos (USD)</option>
+                <option value="PEN">Soles (PEN)</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label>Descripción</label>
             <textarea name="description" class="form-control" rows="3"></textarea>
         </div>

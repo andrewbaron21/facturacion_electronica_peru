@@ -13,12 +13,12 @@
 
     <a href="{{ route('menus.create') }}" class="btn btn-primary mb-3">Agregar Plato</a>
 
-    @foreach($branches as $branch)
-        <h2>Sede: {{ $branch->name }}</h2>
-        <p>Dirección: {{ $branch->address ?? 'Sin dirección' }}</p>
-        <p>Teléfono: {{ $branch->phone ?? 'Sin teléfono' }}</p>
+    @foreach($branches as $branchId => $menus)
+        <h2>Sede: {{ $menus->first()->branch_name }}</h2>
+        <p>Dirección: {{ $menus->first()->address ?? 'Sin dirección' }}</p>
+        <p>Teléfono: {{ $menus->first()->phone ?? 'Sin teléfono' }}</p>
 
-        @if($branch->menus->isEmpty())
+        @if($menus->isEmpty() || $menus->first()->menu_id === null)
             <p>No hay menús disponibles para esta sede.</p>
         @else
             <table class="table mt-3">
@@ -26,29 +26,37 @@
                     <tr>
                         <th>Nombre</th>
                         <th>Precio</th>
-                        <th>Estado</th>
+                        <th>Moneda</th>
                         <th>Descripción</th>
                         <th>Imagen</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($branch->menus as $menu)
+                    @foreach($menus as $menu)
                         <tr>
-                            <td>{{ $menu->name }}</td>
-                            <td>S/. {{ number_format($menu->price, 2) }}</td>
-                            <td>{{ $menu->status ? 'Disponible' : 'No Disponible' }}</td>
-                            <td>{{ $menu->description }}</td>
+                            <td>{{ $menu->menu_name }}</td>
+                            <td>S/. {{ number_format($menu->menu_price, 2) }}</td>
                             <td>
-                                @if($menu->image)
-                                    <img src="{{ asset('storage/' . $menu->image) }}" alt="Imagen del menú" class="img-fluid" style="max-width: 100px;">
+                                @if($menu->menu_currency === 'USD')
+                                    Dólares (USD)
+                                @elseif($menu->menu_currency === 'PEN')
+                                    Soles (PEN)
+                                @else
+                                    Desconocido
+                                @endif
+                            </td>
+                            <td>{{ $menu->menu_description }}</td>
+                            <td>
+                                @if($menu->menu_image)
+                                    <img src="{{ asset('storage/' . $menu->menu_image) }}" alt="Imagen del menú" class="img-fluid" style="max-width: 100px;">
                                 @else
                                     Sin imagen
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('menus.edit', $menu->id) }}" class="btn btn-warning">Editar</a>
-                                <form action="{{ route('menus.destroy', $menu->id) }}" method="POST" class="d-inline">
+                                <a href="{{ route('menus.edit', $menu->menu_id) }}" class="btn btn-warning">Editar</a>
+                                <form action="{{ route('menus.destroy', $menu->menu_id) }}" method="POST" class="d-inline">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger">Eliminar</button>

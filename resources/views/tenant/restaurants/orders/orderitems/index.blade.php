@@ -19,7 +19,11 @@
             <select name="menu_id" id="menu_id" class="form-control" required>
                 <option value="">Seleccione un Plato</option>
                 @foreach($menus as $menu)
-                <option value="{{ $menu->id }}">{{ $menu->name }} - ${{ $menu->price }}</option>
+                    @if($menu->item)
+                        <option value="{{ $menu->id }}">
+                            {{ $menu->item->name }} - {{ $menu->item->currency_type_id }} ${{ number_format($menu->item->sale_unit_price, 2) }}
+                        </option>
+                    @endif
                 @endforeach
             </select>
         </div>
@@ -28,8 +32,13 @@
             <label for="quantity">Cantidad</label>
             <input type="number" name="quantity" id="quantity" class="form-control" min="1" required>
         </div>
-
-        <button type="submit" class="btn btn-success">Agregar Plato</button>
+        @if(!$isAdmin)
+            <button type="submit" class="btn btn-success">Agregar Plato</button>
+        @else
+            <div class="alert alert-warning">
+            Solo los meseros pueden agregar ítems.
+            </div>
+        @endif
     </form>
 
     @if(session('success'))
@@ -53,7 +62,7 @@
         <tbody>
             @foreach($orderItems as $item)
             <tr>
-                <td>{{ $item->menu->name }}</td>
+                <td>{{ $item->menu->item->name }}</td>
                 <td>{{ $item->quantity }}</td>
                 <td>${{ $item->price }}</td>
                 <td>${{ $item->quantity * $item->price }}</td>

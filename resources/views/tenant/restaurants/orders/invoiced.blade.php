@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container mt-5">
-    <h1 class="mb-4 text-center">Pedidos Entregados</h1>
+    <h1 class="mb-4 text-center">Pedidos facturados</h1>
 
     @if($errors->any())
         <div class="alert alert-danger">
@@ -46,7 +46,6 @@
                     <th>Fecha de Entrega</th>
                     <th>Ítems del Pedido</th>
                     <th>Costo Total</th>
-                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="delivered-orders-list">
@@ -62,7 +61,7 @@
         const date = document.getElementById('date').value;
         const tableId = document.getElementById('table_id').value;
 
-        fetch("{{ route('orders.delivered.polling') }}?date=" + date + "&table_id=" + tableId)
+        fetch("{{ route('orders.invoiced.polling') }}?date=" + date + "&table_id=" + tableId)
             .then(response => response.json())
             .then(data => {
                 let ordersList = document.getElementById('delivered-orders-list');
@@ -79,13 +78,6 @@
                             <td>${new Date(order.updated_at).toLocaleString()}</td>
                             <td><ul>${itemsHtml}</ul></td>
                             <td>$${order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</td>
-                            <td>
-                                <form action="/restaurants/orders/${order.id}/mark-paid" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    <button type="submit" class="btn btn-success btn-sm">Marcar como facturado</button>
-                                </form>
-                            </td>
                         </tr>
                     `;
                 });

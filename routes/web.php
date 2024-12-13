@@ -809,6 +809,8 @@ if ($hostname) {
                 
                 // Ruta para la vista de pedidos entregados
                 Route::get('/orders/delivered', 'RestaurantController@deliveredOrders')->name('orders.delivered');
+                Route::put('/orders/{id}/mark-paid', 'RestaurantController@markAsPaid')->name('orders.mark_paid');
+                Route::get('/orders/invoiced', 'RestaurantController@invoicedOrders')->name('orders.invoiced');
                 
                 
                 // Polling
@@ -817,7 +819,7 @@ if ($hostname) {
                 Route::get('orders/ready/polling', 'RestaurantController@pollReadyOrders')->name('orders.ready.polling');
                 // Ruta para el polling de pedidos entregados
                 Route::get('/orders/delivered/polling', 'RestaurantController@pollDeliveredOrders')->name('orders.delivered.polling');
-
+                Route::get('/orders/invoiced/polling', 'RestaurantController@pollInvoicedOrders')->name('orders.invoiced.polling');
             });
 
             // Branches

@@ -1329,7 +1329,7 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                         <li class="nav-parent {{ $firstLevel === 'restaurant' ? 'nav-active nav-expanded' : '' }}">
                             <a class="nav-link" href="#">
                                 <i class="fas fa-utensils" aria-hidden="true"></i>
-                                <span>Restaurante <sup style="background: #ffc300; padding: 0px 3px; border-radius: 4px;">Beta</sup></span>
+                                <span>Restaurante</span>
                             </a>
                             <ul class="nav nav-children">
                                 @if ($isAdmin)
@@ -1377,6 +1377,9 @@ $inventory_configuration = InventoryConfiguration::getSidebarPermissions();
                                         </a>
                                         <ul class="nav nav-children">
                                             <li><a class="nav-link" href="{{ route('orders.delivered') }}">Pedidos Entregados</a></li>
+                                        </ul>
+                                        <ul class="nav nav-children">
+                                            <li><a class="nav-link" href="{{ route('orders.invoiced') }}">Pedidos facturados</a></li>
                                         </ul>
                                     </li>
                                 @endif

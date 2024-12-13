@@ -41,7 +41,13 @@
             </select>
         </div>
 
-        <button type="submit" class="btn btn-success">Crear Pedido</button>
+        @if(!$isAdmin)
+            <button type="submit" class="btn btn-success">Crear Pedido</button>
+        @else
+            <div class="alert alert-warning">
+                Solo los meseros pueden crear nuevo pedido.
+            </div>
+        @endif
         <a href="{{ route('orders.waiters') }}" class="btn btn-secondary">Cancelar</a>
     </form>
 </div>
