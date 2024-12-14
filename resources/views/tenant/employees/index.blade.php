@@ -73,6 +73,7 @@
                     </td>
                     <td>
                         <div class="btn-group-vertical mr-2">
+                            <a href="{{ route('employees.edit', $employee->id) }}" class="btn btn-info btn-sm mb-2">Editar</a>
                             <form action="{{ route('employees.removeRole', ['employee' => $employee->id]) }}" method="POST" class="mb-2">
                                 @csrf
                                 @method('DELETE')

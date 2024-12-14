@@ -840,7 +840,9 @@ if ($hostname) {
 
             // Mostrar Formulario de Creación de Empleados
             Route::get('employees/create', 'EmployeeController@create')->name('employees.create');
-
+            Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+            Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+            
             // Almacenar Nuevo Empleado
             Route::post('employees', 'EmployeeController@store')->name('employees.store');
             Route::delete('employees/{id}', 'EmployeeController@destroy')->name('employees.destroy');

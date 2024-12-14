@@ -9,6 +9,7 @@ use App\Models\Tenant\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule; 
 
 class EmployeeController extends Controller
 {
@@ -62,6 +63,43 @@ class EmployeeController extends Controller
         ]);
 
         return redirect()->route('employees.index')->with('success', 'Empleado creado con éxito');
+    }
+
+    public function edit($id)
+    {
+        // Buscar el empleado por ID
+        $employee = Employee::findOrFail($id);
+
+        // Mostrar la vista de edición
+        return view('tenant.employees.edit', compact('employee'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        // Validar los datos incluyendo la existencia del correo electrónico en la tabla employees del tenant
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('tenant.employees')->ignore($id)], // Ignorar el email actual
+            'phone' => 'nullable|string|max:15',
+            'password' => 'nullable|string|min:8', // Contraseña opcional
+        ]);
+
+        // Buscar el empleado
+        $employee = Employee::findOrFail($id);
+
+        // Actualizar los datos del empleado
+        $employee->update($request->only(['name', 'email', 'phone']));
+
+        // Actualizar la tabla de usuarios
+        $userData = ['name' => $request->name, 'email' => $request->email];
+        if ($request->password) {
+            $userData['password'] = Hash::make($request->password);
+        }
+        DB::connection('tenant')->table('users')
+            ->where('email', $employee->getOriginal('email')) // Usamos el email original para buscar el usuario
+            ->update($userData);
+
+        return redirect()->route('employees.index')->with('success', 'Empleado actualizado con éxito');
     }
 
     public function destroy($id)
