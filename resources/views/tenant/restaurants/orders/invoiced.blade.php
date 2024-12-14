@@ -68,7 +68,7 @@
                 ordersList.innerHTML = '';
                 data.orders.forEach(order => {
                     let itemsHtml = order.items.map(item => 
-                        `<li>${item?.menu?.item?.name} (x${item.quantity}) - $${parseFloat(item.price).toFixed(2)}</li>`
+                        `<li>Código interno: <strong>${item?.menu?.item?.internal_id}</strong> <br> ${item?.menu?.item?.name} (x${item.quantity}) - $${parseFloat(item.price).toFixed(2)}</li>`
                     ).join('');
 
                     ordersList.innerHTML += `

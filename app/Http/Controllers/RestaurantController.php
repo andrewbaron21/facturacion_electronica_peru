@@ -160,6 +160,12 @@ class RestaurantController extends Controller
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
+
+         // Generar un código único para `internal_id`
+        do {
+            $randomCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT); // Código numérico de 6 dígitos
+            $exists = DB::connection('tenant')->table('items')->where('internal_id', $randomCode)->exists();
+        } while ($exists);
     
         // Preparar datos del producto (item)
         $itemData = [
@@ -170,6 +176,7 @@ class RestaurantController extends Controller
             'apply_restaurant' => true,
             'item_type_id' => '01',
             'unit_type_id' => 'NIU',
+            'internal_id' => $randomCode,
             'currency_type_id' => $request->currency, // Guardar el tipo de moneda
             'sale_affectation_igv_type_id' => '10',
             'purchase_affectation_igv_type_id' => '10',
