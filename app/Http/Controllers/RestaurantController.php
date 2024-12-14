@@ -120,7 +120,7 @@ class RestaurantController extends Controller
                 'branches.name as branch_name',
                 'branches.address',
                 'branches.phone',
-                'items.name as menu_name',
+                'items.description as menu_name',
                 'items.sale_unit_price as menu_price',
                 'items.currency_type_id as menu_currency',
                 'items.description as menu_description',
@@ -134,12 +134,129 @@ class RestaurantController extends Controller
         return view('tenant.restaurants.menus.index', compact('branches'));
     }
 
+    // public function showCreateMenuForm()
+    // {
+    //     $branches = Branch::all(); // Asegúrate de cargar las sucursales
+    //     return view('tenant.restaurants.menus.create', compact('branches'));
+    // }
+
+    // public function createMenu(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'name' => 'required|string',
+    //         'price' => 'required|numeric',
+    //         'currency' => 'required|in:USD,PEN', // Validación para el campo Tipo de Moneda
+    //         'branch_id' => [
+    //             'required',
+    //             function ($attribute, $value, $fail) {
+    //                 $exists = DB::connection('tenant')
+    //                     ->table('branches')
+    //                     ->where('id', $value)
+    //                     ->exists();
+    
+    //                 if (!$exists) {
+    //                     $fail('El ID de la Sede no existe en la base de datos de tenant.');
+    //                 }
+    //             },
+    //         ],
+    //         'description' => 'nullable|string',
+    //         'image' => 'nullable|file|mimes:jpeg,png,jpg|max:2048', // Validación del archivo
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return redirect()->back()->withErrors($validator)->withInput();
+    //     }
+
+    //      // Generar un código único para `internal_id`
+    //     do {
+    //         $randomCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT); // Código numérico de 6 dígitos
+    //         $exists = DB::connection('tenant')->table('items')->where('internal_id', $randomCode)->exists();
+    //     } while ($exists);
+    
+    //     // Preparar datos del producto (item)
+    //     $itemData = [
+    //         'name' => $request->name,
+    //         'sale_unit_price' => $request->price,
+    //         'description' => $request->description,
+    //         'image' => null, // Esto se actualizará si hay una imagen
+    //         'apply_restaurant' => true,
+    //         'item_type_id' => '01',
+    //         'unit_type_id' => 'NIU',
+    //         'internal_id' => $randomCode,
+    //         'currency_type_id' => $request->currency, // Guardar el tipo de moneda
+    //         'sale_affectation_igv_type_id' => '10',
+    //         'purchase_affectation_igv_type_id' => '10',
+    //         'created_at' => now(),
+    //         'updated_at' => now(),
+    //     ];
+    
+    //     // Guardar la imagen, si existe
+    //     if ($request->hasFile('image')) {
+    //         $path = $request->file('image')->store('item_images', 'public');
+    //         $itemData['image'] = $path;
+    //     }
+    
+    //     // Crear el producto (item) en la tabla `items`
+    //     $itemId = DB::connection('tenant')->table('items')->insertGetId($itemData);
+    
+    //     // Crear el menú asociado
+    //     Menu::create([
+    //         'item_id' => $itemId,
+    //         'branch_id' => $request->branch_id,
+    //     ]);
+    
+    //     return redirect()->route('menus.index')->with('success', 'Menú creado exitosamente.');
+    // }   
+
+    public function showCreateMenuForm(Request $request)
+    {
+        $branches = Branch::all(); // Obtener todas las sucursales
+
+        // Obtener los filtros de la solicitud
+        $filterName = $request->input('filter_name');
+        $filterDescription = $request->input('filter_description');
+        $filterId = $request->input('filter_id');
+
+        // Construir la consulta con filtros
+        $itemsQuery = DB::connection('tenant')
+            ->table('items')
+            ->whereNull('internal_id'); // Solo mostrar ítems sin internal_id
+
+        if ($filterName) {
+            $itemsQuery->where('name', 'like', '%' . $filterName . '%');
+        }
+
+        if ($filterDescription) {
+            $itemsQuery->where('description', 'like', '%' . $filterDescription . '%');
+        }
+
+        if ($filterId) {
+            $itemsQuery->where('id', $filterId);
+        }
+
+        // Ejecutar la consulta
+        $items = $itemsQuery->get();
+
+        // Pasar los datos a la vista
+        return view('tenant.restaurants.menus.create', compact('branches', 'items'));
+    }
+
     public function createMenu(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'price' => 'required|numeric',
-            'currency' => 'required|in:USD,PEN', // Validación para el campo Tipo de Moneda
+            'item_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $exists = DB::connection('tenant')
+                        ->table('items')
+                        ->where('id', $value)
+                        ->exists();
+
+                    if (!$exists) {
+                        $fail('El ID del Producto no existe en la base de datos de tenant.');
+                    }
+                },
+            ],
             'branch_id' => [
                 'required',
                 function ($attribute, $value, $fail) {
@@ -147,60 +264,38 @@ class RestaurantController extends Controller
                         ->table('branches')
                         ->where('id', $value)
                         ->exists();
-    
+
                     if (!$exists) {
                         $fail('El ID de la Sede no existe en la base de datos de tenant.');
                     }
                 },
             ],
-            'description' => 'nullable|string',
-            'image' => 'nullable|file|mimes:jpeg,png,jpg|max:2048', // Validación del archivo
         ]);
-    
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-         // Generar un código único para `internal_id`
+        // Generar un código único para `internal_id`
         do {
             $randomCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT); // Código numérico de 6 dígitos
             $exists = DB::connection('tenant')->table('items')->where('internal_id', $randomCode)->exists();
         } while ($exists);
-    
-        // Preparar datos del producto (item)
-        $itemData = [
-            'name' => $request->name,
-            'sale_unit_price' => $request->price,
-            'description' => $request->description,
-            'image' => null, // Esto se actualizará si hay una imagen
-            'apply_restaurant' => true,
-            'item_type_id' => '01',
-            'unit_type_id' => 'NIU',
-            'internal_id' => $randomCode,
-            'currency_type_id' => $request->currency, // Guardar el tipo de moneda
-            'sale_affectation_igv_type_id' => '10',
-            'purchase_affectation_igv_type_id' => '10',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-    
-        // Guardar la imagen, si existe
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('item_images', 'public');
-            $itemData['image'] = $path;
-        }
-    
-        // Crear el producto (item) en la tabla `items`
-        $itemId = DB::connection('tenant')->table('items')->insertGetId($itemData);
-    
+
+        // Actualizar el `internal_id` del producto seleccionado
+        DB::connection('tenant')
+            ->table('items')
+            ->where('id', $request->item_id)
+            ->update(['internal_id' => $randomCode]);
+
         // Crear el menú asociado
         Menu::create([
-            'item_id' => $itemId,
+            'item_id' => $request->item_id,
             'branch_id' => $request->branch_id,
         ]);
-    
+
         return redirect()->route('menus.index')->with('success', 'Menú creado exitosamente.');
-    }   
+    }
 
     public function editMenu($id)
     {
@@ -287,12 +382,6 @@ class RestaurantController extends Controller
     
         return redirect()->route('menus.index')->with('success', 'Menú eliminado con éxito.');
     }    
-
-    public function showCreateMenuForm()
-    {
-        $branches = Branch::all(); // Asegúrate de cargar las sucursales
-        return view('tenant.restaurants.menus.create', compact('branches'));
-    }
 
     public function showAvailableMenus($branchId)
     {

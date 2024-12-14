@@ -21,7 +21,7 @@
                 @foreach($menus as $menu)
                     @if($menu->item)
                         <option value="{{ $menu->id }}">
-                            {{ $menu->item->name }} - {{ $menu->item->currency_type_id }} ${{ number_format($menu->item->sale_unit_price, 2) }}
+                            {{ $menu->item->description }} - {{ $menu->item->currency_type_id }} ${{ number_format($menu->item->sale_unit_price, 2) }}
                         </option>
                     @endif
                 @endforeach
@@ -62,7 +62,7 @@
         <tbody>
             @foreach($orderItems as $item)
             <tr>
-                <td>{{ $item->menu->item->name }}</td>
+                <td>{{ $item->menu->item->description }}</td>
                 <td>{{ $item->quantity }}</td>
                 <td>${{ $item->price }}</td>
                 <td>${{ $item->quantity * $item->price }}</td>

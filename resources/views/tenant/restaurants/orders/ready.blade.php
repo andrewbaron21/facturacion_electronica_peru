@@ -41,7 +41,7 @@
                     if (order.items && order.items.length > 0) {
                         itemsHTML = '<ul>';
                         order.items.forEach(item => {
-                            itemsHTML += `<li>${item.menu ? item?.menu?.item?.name : 'Sin información'} - Cantidad: ${item.quantity}</li>`;
+                            itemsHTML += `<li>${item.menu ? item?.menu?.item?.description : 'Sin información'} - Cantidad: ${item.quantity}</li>`;
                         });
                         itemsHTML += '</ul>';
                     } else {

@@ -8,6 +8,7 @@ use App\Models\Tenant\Employee;
 use App\Models\Tenant\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EmployeeController extends Controller
 {
@@ -54,6 +55,7 @@ class EmployeeController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'type' => 'client',
+            'establishment_id' => 1,
             'password' => Hash::make($request->password), // Hashear la contraseña
             'created_at' => now(),
             'updated_at' => now(),
@@ -66,15 +68,23 @@ class EmployeeController extends Controller
     {
         // Buscar el empleado por ID
         $employee = Employee::findOrFail($id);
-
-        // Eliminar el usuario asociado en la tabla users
-        DB::connection('tenant')->table('users')->where('email', $employee->email)->delete();
-
+    
+        // Eliminar las relaciones del empleado en la tabla branch_employee_roles
+        $this->removeRole(new Request(), $id); // Llamamos a la función removeRole
+    
+        // Generar una nueva contraseña aleatoria
+        $newPassword = Str::random(10);
+    
+        // Actualizar la contraseña del usuario asociado en la tabla users
+        DB::connection('tenant')->table('users')
+            ->where('email', $employee->email)
+            ->update(['password' => bcrypt($newPassword)]);
+    
         // Eliminar el empleado en la tabla employees
         $employee->delete();
-
-        return redirect()->route('employees.index')->with('success', 'Empleado eliminado con éxito');
-    }
+    
+        return redirect()->route('employees.index')->with('success', 'Empleado eliminado y roles actualizados con éxito. La contraseña del usuario ha sido reiniciada.');
+    }    
 
     public function assignRole(Request $request)
     {

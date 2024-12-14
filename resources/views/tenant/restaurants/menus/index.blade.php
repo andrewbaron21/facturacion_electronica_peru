@@ -49,7 +49,7 @@
                             <td>{{ $menu->menu_description }}</td>
                             <td>
                                 @if($menu->menu_image)
-                                    <img src="{{ asset('storage/' . $menu->menu_image) }}" alt="Imagen del menú" class="img-fluid" style="max-width: 100px;">
+                                    <img src="{{ asset('storage/uploads/items/' . $menu->menu_image) }}" alt="Imagen del menú" class="img-fluid" style="max-width: 100px;">
                                 @else
                                     Sin imagen
                                 @endif

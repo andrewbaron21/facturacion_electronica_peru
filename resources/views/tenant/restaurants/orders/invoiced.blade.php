@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container mt-5">
-    <h1 class="mb-4 text-center">Pedidos facturados</h1>
+    <h1 class="mb-4 text-center">Pedidos Facturados</h1>
 
     @if($errors->any())
         <div class="alert alert-danger">
@@ -16,11 +16,11 @@
 
     <!-- Filtros -->
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
             <label for="date">Fecha:</label>
             <input type="date" name="date" id="date" class="form-control" value="{{ request('date') }}">
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 mb-3 mb-md-0">
             <label for="table_id">Mesa:</label>
             <select name="table_id" id="table_id" class="form-control">
                 <option value="">Todas las mesas</option>
@@ -31,7 +31,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="col-md-4 mt-4">
+        <div class="col-12 col-md-4">
             <button id="filter-btn" class="btn btn-primary w-100">Aplicar Filtros</button>
         </div>
     </div>
@@ -42,10 +42,10 @@
             <thead class="thead-dark">
                 <tr>
                     <th>ID Pedido</th>
-                    <th>Mesa</th>
+                    <th class="d-none d-md-table-cell">Mesa</th>
                     <th>Fecha de Entrega</th>
-                    <th>Ítems del Pedido</th>
-                    <th>Costo Total</th>
+                    <th>Ítems</th>
+                    <th class="d-none d-md-table-cell">Costo Total</th>
                 </tr>
             </thead>
             <tbody id="delivered-orders-list">
@@ -53,10 +53,14 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Alternativa para pantallas pequeñas: Mostrar tarjetas (opcional) -->
+    <div id="delivered-orders-cards" class="d-md-none">
+        <!-- Contenido dinámico cargado con JavaScript -->
+    </div>
 </div>
 
 <script>
-    // Función para realizar el polling de las órdenes entregadas
     function fetchDeliveredOrders() {
         const date = document.getElementById('date').value;
         const tableId = document.getElementById('table_id').value;
@@ -65,31 +69,52 @@
             .then(response => response.json())
             .then(data => {
                 let ordersList = document.getElementById('delivered-orders-list');
+                let ordersCards = document.getElementById('delivered-orders-cards');
                 ordersList.innerHTML = '';
+                ordersCards.innerHTML = '';
+
                 data.orders.forEach(order => {
                     let itemsHtml = order.items.map(item => 
-                        `<li>Código interno: <strong>${item?.menu?.item?.internal_id}</strong> <br> ${item?.menu?.item?.name} (x${item.quantity}) - $${parseFloat(item.price).toFixed(2)}</li>`
-                    ).join('');
+                        `<li>
+                            <small>
+                                <strong>Código interno:</strong> ${item?.menu?.item?.internal_id} <br>
+                                <strong>Nombre:</strong> ${item?.menu?.item?.description} <br>
+                                <strong>Cantidad:</strong> (x${item.quantity}) - $${parseFloat(item.price).toFixed(2)}
+                            </small>
+                        </li>`).join('');
 
+                    // Fila para la tabla (pantallas grandes)
                     ordersList.innerHTML += `
                         <tr>
                             <td>${order.id}</td>
-                            <td>Mesa ${order.table?.number || 'N/A'}</td>
+                            <td class="d-none d-md-table-cell">Mesa ${order.table?.number || 'N/A'}</td>
                             <td>${new Date(order.updated_at).toLocaleString()}</td>
                             <td><ul>${itemsHtml}</ul></td>
-                            <td>$${order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</td>
+                            <td class="d-none d-md-table-cell">$${order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</td>
                         </tr>
+                    `;
+
+                    // Tarjeta para pantallas pequeñas
+                    ordersCards.innerHTML += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Pedido #${order.id}</h5>
+                                <p><strong>Mesa:</strong> ${order.table?.number || 'N/A'}</p>
+                                <p><strong>Fecha de Entrega:</strong> ${new Date(order.updated_at).toLocaleString()}</p>
+                                <p><strong>Ítems:</strong></p>
+                                <ul>${itemsHtml}</ul>
+                                <p><strong>Total:</strong> $${order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</p>
+                            </div>
+                        </div>
                     `;
                 });
             })
             .catch(error => console.error("Error al obtener las órdenes entregadas: ", error));
     }
 
-    // Event Listener para el botón de filtros
     document.getElementById('filter-btn').addEventListener('click', fetchDeliveredOrders);
 
-    // Ejecutar la función de polling cada 5 segundos
     setInterval(fetchDeliveredOrders, 5000);
-    fetchDeliveredOrders(); // Llamar inmediatamente para evitar espera
+    fetchDeliveredOrders();
 </script>
 @endsection
