@@ -55,7 +55,7 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('menus.edit', $menu->menu_id) }}" class="btn btn-warning">Editar</a>
+                                <!-- <a href="{{ route('menus.edit', $menu->menu_id) }}" class="btn btn-warning">Editar</a> -->
                                 <form action="{{ route('menus.destroy', $menu->menu_id) }}" method="POST" class="d-inline">
                                     @csrf
                                     @method('DELETE')
