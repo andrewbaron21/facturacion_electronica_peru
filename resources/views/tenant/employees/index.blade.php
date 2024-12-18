@@ -51,22 +51,24 @@
                                     @csrf
                                     <input type="hidden" name="employee_id" value="{{ $employee->id }}">
                                     <div class="form-group">
-                                        <label for="branch_id">Sucursal:</label>
-                                        <select name="branch_id" id="branch_id" class="form-control form-control-sm" required>
+                                        <label for="branch_id_{{ $employee->id }}">Sucursal:</label>
+                                        <select name="branch_id" id="branch_id_{{ $employee->id }}" class="form-control form-control-sm" required>
+                                            <option value="" disabled selected>Seleccionar sede</option>
                                             @foreach($branches as $branch)
                                                 <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label for="role_id">Rol:</label>
-                                        <select name="role_id" id="role_id" class="form-control form-control-sm" required>
+                                        <label for="role_id_{{ $employee->id }}">Rol:</label>
+                                        <select name="role_id" id="role_id_{{ $employee->id }}" class="form-control form-control-sm" required>
+                                            <option value="" disabled selected>Seleccionar role</option>
                                             @foreach($roles as $role)
                                                 <option value="{{ $role->id }}">{{ $role->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <button type="submit" class="btn btn-secondary btn-sm w-100 mt-2 mb-2">Asignar Rol</button>
+                                    <button type="submit" id="submit_button_{{ $employee->id }}" class="btn btn-secondary btn-sm w-100 mt-2 mb-2" disabled>Asignar Rol</button>
                                 </form>
                             </div>
                         </div>
@@ -92,4 +94,26 @@
         </table>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const employees = @json($employees); // Pasamos la lista de empleados al JavaScript
+        
+        employees.forEach(employee => {
+            const branchSelect = document.getElementById(`branch_id_${employee.id}`);
+            const roleSelect = document.getElementById(`role_id_${employee.id}`);
+            const submitButton = document.getElementById(`submit_button_${employee.id}`);
+
+            const validateSelection = () => {
+                if (branchSelect.value && roleSelect.value) {
+                    submitButton.removeAttribute('disabled');
+                } else {
+                    submitButton.setAttribute('disabled', 'true');
+                }
+            };
+
+            branchSelect.addEventListener('change', validateSelection);
+            roleSelect.addEventListener('change', validateSelection);
+        });
+    });
+</script>
 @endsection

@@ -17,6 +17,39 @@ use Carbon\Carbon;
 
 class RestaurantController extends Controller
 {
+    public function getFqdn($number)
+    {
+        try {
+            // Buscar el cliente por el número proporcionado
+            $client = DB::connection('system') // Cambiado de 'main' a 'system'
+                ->table('clients')
+                ->where('number', $number)
+                ->first();
+    
+            // Validar si el cliente fue encontrado
+            if (!$client) {
+                return response()->json(['error' => 'Cliente no encontrado'], 404);
+            }
+    
+            // Buscar el hostname relacionado
+            $hostname = DB::connection('system') // Cambiado de 'main' a 'system'
+                ->table('hostnames')
+                ->where('id', $client->hostname_id)
+                ->first();
+    
+            // Validar si el hostname fue encontrado
+            if (!$hostname) {
+                return response()->json(['error' => 'Hostname no encontrado'], 404);
+            }
+    
+            // Retornar el fqdn
+            return response()->json(['fqdn' => $hostname->fqdn], 200);
+        } catch (\Exception $e) {
+            // Manejo de errores
+            return response()->json(['error' => 'Error interno del servidor', 'details' => $e->getMessage()], 500);
+        }
+    }    
+    
     // Mostrar lista de restaurantes
     public function index()
     {
@@ -133,80 +166,6 @@ class RestaurantController extends Controller
 
         return view('tenant.restaurants.menus.index', compact('branches'));
     }
-
-    // public function showCreateMenuForm()
-    // {
-    //     $branches = Branch::all(); // Asegúrate de cargar las sucursales
-    //     return view('tenant.restaurants.menus.create', compact('branches'));
-    // }
-
-    // public function createMenu(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'name' => 'required|string',
-    //         'price' => 'required|numeric',
-    //         'currency' => 'required|in:USD,PEN', // Validación para el campo Tipo de Moneda
-    //         'branch_id' => [
-    //             'required',
-    //             function ($attribute, $value, $fail) {
-    //                 $exists = DB::connection('tenant')
-    //                     ->table('branches')
-    //                     ->where('id', $value)
-    //                     ->exists();
-    
-    //                 if (!$exists) {
-    //                     $fail('El ID de la Sede no existe en la base de datos de tenant.');
-    //                 }
-    //             },
-    //         ],
-    //         'description' => 'nullable|string',
-    //         'image' => 'nullable|file|mimes:jpeg,png,jpg|max:2048', // Validación del archivo
-    //     ]);
-    
-    //     if ($validator->fails()) {
-    //         return redirect()->back()->withErrors($validator)->withInput();
-    //     }
-
-    //      // Generar un código único para `internal_id`
-    //     do {
-    //         $randomCode = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT); // Código numérico de 6 dígitos
-    //         $exists = DB::connection('tenant')->table('items')->where('internal_id', $randomCode)->exists();
-    //     } while ($exists);
-    
-    //     // Preparar datos del producto (item)
-    //     $itemData = [
-    //         'name' => $request->name,
-    //         'sale_unit_price' => $request->price,
-    //         'description' => $request->description,
-    //         'image' => null, // Esto se actualizará si hay una imagen
-    //         'apply_restaurant' => true,
-    //         'item_type_id' => '01',
-    //         'unit_type_id' => 'NIU',
-    //         'internal_id' => $randomCode,
-    //         'currency_type_id' => $request->currency, // Guardar el tipo de moneda
-    //         'sale_affectation_igv_type_id' => '10',
-    //         'purchase_affectation_igv_type_id' => '10',
-    //         'created_at' => now(),
-    //         'updated_at' => now(),
-    //     ];
-    
-    //     // Guardar la imagen, si existe
-    //     if ($request->hasFile('image')) {
-    //         $path = $request->file('image')->store('item_images', 'public');
-    //         $itemData['image'] = $path;
-    //     }
-    
-    //     // Crear el producto (item) en la tabla `items`
-    //     $itemId = DB::connection('tenant')->table('items')->insertGetId($itemData);
-    
-    //     // Crear el menú asociado
-    //     Menu::create([
-    //         'item_id' => $itemId,
-    //         'branch_id' => $request->branch_id,
-    //     ]);
-    
-    //     return redirect()->route('menus.index')->with('success', 'Menú creado exitosamente.');
-    // }   
 
     public function showCreateMenuForm(Request $request)
     {

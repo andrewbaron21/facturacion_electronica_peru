@@ -5,6 +5,7 @@ use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\EmployeeController;
 
 $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+// Route::get('get-fqdn/{number}', 'RestaurantController@getFqdn');
 
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
