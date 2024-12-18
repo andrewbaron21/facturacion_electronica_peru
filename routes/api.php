@@ -3,7 +3,6 @@ use App\Http\Controllers\RestaurantController;
 
 
 Route::get('generate_token', 'Tenant\Api\MobileController@getSeries');
-Route::get('get-fqdn/{number}', 'RestaurantController@getFqdn');
 
 $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 if ($hostname) {
@@ -99,7 +98,8 @@ if ($hostname) {
     });
 } else {
     Route::domain(env('APP_URL_BASE'))->group(function () {
-
+        
+        Route::get('get-fqdn/{number}', 'RestaurantController@getFqdn');
 
         Route::middleware(['auth:system_api'])->group(function () {
 
